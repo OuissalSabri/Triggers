@@ -1,0 +1,11 @@
+trigger IncrementNombreCandidatVu on Entretien__c (after insert, after update) {
+    Set<Id> offreEmploiIds = new Set<Id>();
+
+    for (Entretien__c ent : Trigger.new) {
+        offreEmploiIds.add(ent.Offre_Emploi__c);
+    }
+
+    OffreEmploiHelper.mettreAJourNombreCandidatVu(offreEmploiIds);
+
+
+}
