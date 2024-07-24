@@ -1,0 +1,58 @@
+@isTest
+private class TestEntretiens {
+    @isTest
+    static void testCheckOffreEmploiStatusBeforeUpdate() {
+        
+        Offre_Emploi__c offreEmploi = new Offre_Emploi__c(
+    Email_de_contact__c = 'company.doe@example.com',
+    Nom_du_poste__c = 'Test Job',
+    Soci_t__c = 'Test Company',
+    Statut__c = 'Ouvert',
+    Nombre_de_postes_ouverts__c = 0,
+    Nombre_de_postes_restant__c = 0,
+    Type_de_contrat__c = 'CDD',
+    Niveaux_d_exp_rience__c  = 'Moins d\'1 an d\'expérience'
+);
+        insert offreEmploi;
+
+        
+        Date dateDeNaissance1 = Date.newInstance(1985, 1, 15);
+        Candidat__c candidat =new Candidat__c(
+            Nom__c = 'John',
+            Pr_nom__c = 'Doe',
+            Adress_email__c = 'john.doe@example.com',
+            T_l_phone__c = '123456789',
+            Date_de_naissance__c = dateDeNaissance1,
+            Salaire_souhait__c = 'Entre 10000 DH et 11000 DH',
+            Type_de_contrat_recherch__c ='CDD',
+            Statut__c = 'Refusé'
+        );
+        insert candidat;
+
+        
+        Entretien__c entretien = new Entretien__c(
+            Offre_Emploi__c = offreEmploi.Id,
+            Candidat__c = candidat.Id,
+             Date_pr_vue__c = Date.today(),
+            Heure__c = '10h00',
+            Poste__c = 'Développeur logiciel',
+            Responsable_RH__c = 'Latifi Hafsa',
+            Responsable_Technique__c = 'Mostashir Yassir',
+            Statut__c = 'validé',
+            RecordTypeId = '012WU000001E7kFYAS'
+        );
+        
+        insert entretien;
+
+        Test.startTest();
+
+candidat.Statut__c = 'accepté';
+Database.SaveResult saveResult = Database.update(candidat, false);
+Test.stopTest();
+
+
+System.assert(!saveResult.isSuccess(), 'Expected an error to be added to the record');
+System.assertEquals('This Offre Emploi has reached the maximum number of accepted candidates', saveResult.getErrors()[0].getMessage());
+
+}
+}
