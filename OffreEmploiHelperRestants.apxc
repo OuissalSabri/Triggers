@@ -1,0 +1,75 @@
+public class OffreEmploiHelperRestants {
+    public static void mettreAJourNombrePostesRestants(Set<Id> candidatIds) {
+        Map<Id, Offre_Emploi__c> offresToUpdateMap = new Map<Id, Offre_Emploi__c>();
+        Set<Id> offreIds = new Set<Id>();
+
+     
+        List<Entretien__c> entretiens = [SELECT Id, Candidat__c, Offre_Emploi__c 
+                                         FROM Entretien__c 
+                                         WHERE Candidat__c IN :candidatIds];
+
+  
+        for (Entretien__c entretien : entretiens) {
+            offreIds.add(entretien.Offre_Emploi__c);
+        }
+
+  
+        List<Offre_Emploi__c> offres = [SELECT Id, Nombre_de_postes_ouverts__c , Nombre_de_postes_restant__c 
+                                         FROM Offre_Emploi__c 
+                                         WHERE Id IN :offreIds];
+
+        Map<Id, Offre_Emploi__c> offreMap = new Map<Id, Offre_Emploi__c>(offres);
+
+       List<Candidat__c> candidats = [SELECT Id, Statut__c FROM Candidat__c WHERE Id IN :candidatIds];
+        for (Candidat__c candidat : candidats) {
+            if (Trigger.oldMap.containsKey(candidat.Id)) {
+                Candidat__c oldCandidat = (Candidat__c) Trigger.oldMap.get(candidat.Id);
+            
+                if (oldCandidat.Statut__c != 'Accepté' && candidat.Statut__c == 'Accepté') {
+                    
+                    for (Entretien__c entretien : entretiens) {
+                        if (entretien.Candidat__c == candidat.Id) {
+                            Offre_Emploi__c offre = offreMap.get(entretien.Offre_Emploi__c);
+                            if (offre != null && !offresToUpdateMap.containsKey(offre.Id)) {
+                               if (offre.Nombre_de_postes_restant__c > 0) {
+                                    offre.Nombre_de_postes_restant__c--;
+                                    offresToUpdateMap.put(offre.Id, offre);
+                                }
+                                
+                            }
+                        }
+                    }
+                }
+            }
+        }
+     List<Candidat__c> candidatss = [SELECT Id, Statut__c FROM Candidat__c WHERE Id IN :candidatIds];    
+for (Candidat__c candidat : candidatss) {
+            if (Trigger.oldMap.containsKey(candidat.Id)) {
+                Candidat__c oldCandidat = (Candidat__c) Trigger.oldMap.get(candidat.Id);
+         
+                if (oldCandidat.Statut__c == 'Accepté' && candidat.Statut__c != 'Accepté') {
+                    
+                    for (Entretien__c entretien : entretiens) {
+                        if (entretien.Candidat__c == candidat.Id) {
+                            Offre_Emploi__c offre = offreMap.get(entretien.Offre_Emploi__c);
+                            if (offre != null && !offresToUpdateMap.containsKey(offre.Id)) {
+                                if (offre.Nombre_de_postes_restant__c < offre.Nombre_de_postes_ouverts__c) {
+                                    offre.Nombre_de_postes_restant__c++;
+                                    offresToUpdateMap.put(offre.Id, offre);
+                                }
+               
+                            }
+                        }
+                    }
+                }
+            }
+        }
+       
+        List<Offre_Emploi__c> offresToUpdate = offresToUpdateMap.values();
+
+        
+        if (!offresToUpdate.isEmpty()) {
+            update offresToUpdate;
+        }
+    }
+}
