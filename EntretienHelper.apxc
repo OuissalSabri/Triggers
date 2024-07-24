@@ -1,0 +1,62 @@
+public class EntretienHelper {
+    public static void checkOffreEmploiStatusBeforeUpdate(List<Candidat__c> newCandidates, Map<Id, Candidat__c> oldCandidateMap) {
+      
+        Map<Id, List<Entretien__c>> candidatEntretienMap = new Map<Id, List<Entretien__c>>();
+
+        
+        Set<Id> offreEmploiIds = new Set<Id>();
+
+       
+        for (Candidat__c candidat : newCandidates) {
+            Candidat__c oldCandidat = oldCandidateMap.get(candidat.Id);
+
+           
+            if (candidat.Statut__c == 'accepté' && oldCandidat.Statut__c != 'accepté') {
+               
+                List<Entretien__c> entretiens = [
+                    SELECT Id, Offre_Emploi__c 
+                    FROM Entretien__c 
+                    WHERE Candidat__c = :candidat.Id
+                ];
+
+                
+                candidatEntretienMap.put(candidat.Id, entretiens);
+
+                
+                for (Entretien__c entretien : entretiens) {
+                    offreEmploiIds.add(entretien.Offre_Emploi__c);
+                }
+            }
+        }
+
+       
+        if (!offreEmploiIds.isEmpty()) {
+         
+            Map<Id, Offre_Emploi__c> offreEmploiMap = new Map<Id, Offre_Emploi__c>(
+                [SELECT Id, Nombre_de_Postes_Restant__c FROM Offre_Emploi__c WHERE Id IN :offreEmploiIds]
+            );
+
+           
+            for (Candidat__c candidat : newCandidates) {
+                Candidat__c oldCandidat = oldCandidateMap.get(candidat.Id);
+
+                
+                if (candidat.Statut__c == 'accepté' && oldCandidat.Statut__c != 'accepté') {
+                    List<Entretien__c> entretiens = candidatEntretienMap.get(candidat.Id);
+                    if (entretiens != null) {
+                        for (Entretien__c entretien : entretiens) {
+                            Offre_Emploi__c offreEmploi = offreEmploiMap.get(entretien.Offre_Emploi__c);
+
+                            
+                            if (offreEmploi != null && offreEmploi.Nombre_de_Postes_Restant__c == 0) {
+                               
+                                candidat.addError('Cette offre d\'emploi a atteint le nombre maximum de candidats acceptés');
+                                break; 
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
