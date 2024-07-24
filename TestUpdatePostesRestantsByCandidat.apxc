@@ -1,0 +1,56 @@
+@isTest
+private class TestUpdatePostesRestantsByCandidat {
+    static testMethod void testUpdatePostesRestantsOnInsert() {
+        
+     Offre_Emploi__c offreTest = new Offre_Emploi__c(
+    Email_de_contact__c = 'company.doe@example.com',
+    Nom_du_poste__c = 'Test Job',
+    Soci_t__c = 'Test Company',
+    Statut__c = 'Ouvert',
+    Nombre_de_postes_ouverts__c = 2,
+    Nombre_de_postes_restant__c = 2,
+    Type_de_contrat__c = 'CDD',
+    Niveaux_d_exp_rience__c  = 'Moins d\'1 an d\'expérience'
+);
+
+        insert offreTest;
+
+        
+        Date dateDeNaissance1 = Date.newInstance(1985, 1, 15);
+        Candidat__c candidat1 = new Candidat__c(
+            Nom__c = 'John',
+            Pr_nom__c = 'Doe',
+            Adress_email__c = 'john.doe@example.com',
+            T_l_phone__c = '123456789',
+            Date_de_naissance__c = dateDeNaissance1,
+            Salaire_souhait__c = 'Entre 10000 DH et 11000 DH',
+            Type_de_contrat_recherch__c ='CDD',
+            Statut__c = 'Refusé'
+        );
+        insert candidat1;
+
+       
+        Entretien__c entretien1 = new Entretien__c(
+            Offre_Emploi__c = offreTest.Id,
+            Candidat__c = candidat1.Id,
+            Date_pr_vue__c = Date.today(),
+            Poste__c = 'Développeur logiciel',
+            Responsable_RH__c = 'Latifi Hafsa',
+            Responsable_Technique__c = 'Mostashir Yassir',
+            Statut__c = 'non validé',
+            Heure__c = '10h30',
+            RecordTypeId = '012WU000001E7kFYAS'
+        );
+        insert entretien1;
+
+        Test.startTest();
+      
+        candidat1.Statut__c = 'Accepté';
+        update candidat1;
+        Test.stopTest();
+
+      
+        Offre_Emploi__c offreMiseAJour = [SELECT Nombre_de_postes_restant__c FROM Offre_Emploi__c WHERE Id = :offreTest.Id];
+        System.assertEquals(1, offreMiseAJour.Nombre_de_postes_restant__c, 'Le nombre de postes restants n\'a pas été correctement mis à jour');
+    }
+}
